@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import re
 import random
@@ -82,10 +83,10 @@ def buildMapping(wordlist, markovLength):
             starts.append(follow)
         addItemToTempMapping(history, follow)
     # Normalize the values in tempMapping, put them into mapping
-    for first, followset in tempMapping.iteritems():
+    for first, followset in tempMapping.items():
         total = sum(followset.values())
         # Normalizing here:
-        mapping[first] = dict([(k, v / total) for k, v in followset.iteritems()])
+        mapping[first] = dict([(k, v / total) for k, v in followset.items()])
 
 # Returns the next word in the sentence (chosen randomly),
 # given the previous ones.
@@ -97,7 +98,7 @@ def next(prevList):
     while toHashKey(prevList) not in mapping:
         prevList.pop(0)
     # Get a random word from the mapping, given prevList
-    for k, v in mapping[toHashKey(prevList)].iteritems():
+    for k, v in mapping[toHashKey(prevList)].items():
         sum += v
         if sum >= index and retval == "":
             retval = k
@@ -122,16 +123,37 @@ def genSentence(markovLength):
 
 def main():
     if len(sys.argv) < 2:
-        sys.stderr.write('Usage: ' + sys.argv [0] + ' text_source [chain_length=1]\n')
+        sys.stderr.write('Usage: ' + sys.argv [0] + ' text_source [chain_length=1] [multi_mode_num_csv_rows] [cace_size]\n')
         sys.exit(1)
 
     filename = sys.argv[1]
     markovLength = 1
-    if len (sys.argv) == 3:
+    rows = None
+    cache_size = None
+    if len (sys.argv) >= 3:
         markovLength = int(sys.argv [2])
 
+    if len (sys.argv) >= 4:
+        rows = int(sys.argv [3])        
+
+    if len (sys.argv) >= 5:
+        cache_size = int(sys.argv [4]) 
+
     buildMapping(wordlist(filename), markovLength)
-    print genSentence(markovLength)
+    
+    if not rows:
+        print(genSentence(markovLength))
+    else:
+        print("id\ttext")
+        text = []
+        if cache_size:
+            for i in range(0, cache_size):
+                text.append(genSentence(markovLength))
+        for row in range(1, rows):
+            if cache_size:
+                print("%s\t%s" % (row, text[row % cache_size]))
+            else:
+                print("%s\t%s" % (row, genSentence(markovLength)))
 
 if __name__ == "__main__":
     main()
